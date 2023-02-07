@@ -55,6 +55,24 @@ describe("USElection", function () {
     expect(await usElection.currentLeader()).to.equal(2); // TRUMP
   });
 
+  it("Submit state results and throw error stay must have atleast one seat", async function () {
+    const stateResults = ["Test", 800, 1200, 0];
+
+    await expect(usElection.submitStateResult(stateResults)).to.be.revertedWith("States must have at least 1 seat");
+  });
+
+  it("Submit state results and throw error vote cannot be tie", async function () {
+    const stateResults = ["Test", 1200, 1200, 10];
+
+    await expect(usElection.submitStateResult(stateResults)).to.be.revertedWith("There cannot be a tie");
+  });
+
+  it("End the elections, should throw error not owner", async function () {
+    const [owner, addr1] = await ethers.getSigners();
+
+    await expect(usElection.connect(addr1).endElection()).to.be.revertedWith("Not invoked by the owner");
+  });
+
   it("Should end the elections, get the leader and election status", async function () {
     const endElectionTx = await usElection.endElection();
 
@@ -65,5 +83,21 @@ describe("USElection", function () {
     expect(await usElection.electionEnded()).to.equal(true); // Ended
   });
 
-  //TODO: ADD YOUR TESTS
+  it("End the elections, should throw error election ended already", async function () {
+    await expect(usElection.endElection()).to.be.revertedWith("The election has ended already");
+  });
+
+  it("Submit state results with not owner and throw error", async function () {
+    const stateResults = ["Ohaio", 800, 1200, 33];
+    const [owner, addr1] = await ethers.getSigners();
+
+    await expect(usElection.connect(addr1).submitStateResult(stateResults)).to.be.revertedWith("Not invoked by the owner");
+  });
+
+  it("Submit state results and throw error election already ended", async function () {
+    const stateResults = ["Test", 800, 1200, 33];
+
+    expect(await usElection.electionEnded()).to.equal(true); // Ended
+    await expect(usElection.submitStateResult(stateResults)).to.be.revertedWith("The election has ended already");
+  });
 });
